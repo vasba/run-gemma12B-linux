@@ -1,98 +1,129 @@
-Copied from: https://dev.to/0xkoji/run-gemma-4-12b-on-wsl2-with-llamacpp-1o2m
+Source: https://dev.to/0xkoji/run-gemma-4-12b-on-wsl2-with-llamacpp-1o2m
 
-1. update WSL environment
+# Run Gemma 4 12B with llama.cpp
+
+## 1. Update WSL environment
+
+```bash
 sudo apt update && sudo apt upgrade -y
-2. install dependencies
-If you don't use -hf option, you don't need to install libssl-dev in this step.
+```
 
+## 2. Install dependencies
+
+If you don't use the `-hf` option, you don't need `libssl-dev`.
+
+```bash
 sudo apt install build-essential cmake git libssl-dev -y
-If nvidia-smi shows a GPU/GPUs on your terminal, you will need to install the tooklit. This will take some time.
+```
 
+If `nvidia-smi` shows a GPU, also install the CUDA toolkit (takes a while):
+
+```bash
 sudo apt install nvidia-cuda-toolkit -y
-3. clone the repo
-Build llama-cli and llama-server. This step also will take some time.
-If you don't plan to use -hf option, you don't need to use -DLLAMA_OPENSSL=ON.
+```
 
-check the number of cores
+## 3. Clone and build llama.cpp
 
+Check the number of cores first:
+
+```bash
 nproc --all
-16
+```
+
+**With GPU (CUDA):**
+
+```bash
 git clone https://github.com/ggerganov/llama.cpp
 cd llama.cpp
 cmake -B build -DGGML_CUDA=ON -DLLAMA_OPENSSL=ON
 cmake --build build --config Release -j 16
+```
 
-# no GPU
+**Without GPU:**
+
+```bash
 git clone https://github.com/ggerganov/llama.cpp
 cd llama.cpp
 cmake -B build
 cmake --build build --config Release -j 16
-4. run the model
-Run gemma-4-12b-it with cli and server.
+```
 
+## 4. Run the model
 
-unsloth/gemma-4-12b-it-GGUF · Hugging Face
-We’re on a journey to advance and democratize artificial intelligence through open source and open science.
+Model: [unsloth/gemma-4-12b-it-GGUF](https://huggingface.co/unsloth/gemma-4-12b-it-GGUF)
 
-huggingface.co
+**CLI:**
+
+```bash
 ./build/bin/llama-cli -hf unsloth/gemma-4-12b-it-GGUF:UD-Q4_K_XL
+```
+
+Example interaction:
+
+```text
 > hello
 
 [Start thinking]
-The user said "hello".
-The user is initiating a conversation.
-Respond politely and offer assistance.
-
-    *   "Hello! How can I help you today?"
-    *   "Hi there! What's on your mind?"
-    *   "Hello! Is there anything I can assist you with?"
+The user said "hello". Respond politely and offer assistance.
 [End thinking]
 
 Hello! How can I help you today?
 
 [ Prompt: 19.5 t/s | Generation: 11.8 t/s ]
-or run web-ui
+```
 
+**Server (web UI + API on port 8080):**
+
+```bash
 ./build/bin/llama-server -hf unsloth/gemma-4-12b-it-GGUF:UD-Q4_K_XL --port 8080
-optional download model from huggingface
+```
+
+**Optional — download model manually:**
+
+```bash
 mkdir -p models
-wget -O models/gemma-4-12b-it-UD-Q4_K_XL.gguf https://huggingface.co/unsloth/gemma-4-12b-it-GGUF/resolve/main/gemma-4-12b-it-UD-Q4_K_XL.gguf
+wget -O models/gemma-4-12b-it-UD-Q4_K_XL.gguf \
+  https://huggingface.co/unsloth/gemma-4-12b-it-GGUF/resolve/main/gemma-4-12b-it-UD-Q4_K_XL.gguf
+```
 
+---
 
-## Run in codex
+## Run with Codex
 
-## configure codex
+### Step 1 — Install Codex
 
-Step 1. Install codex
-First install codex.
+Install the Codex CLI.
 
-Step 2. Create .codex folder
-We need to create config.toml to use local llm with llama.cpp. First we need to run codex
+### Step 2 — Create the `.codex` folder
 
+Run `codex` once (then `Ctrl+C`) so it creates `~/.codex/`:
+
+```bash
 codex
-You don't need to set up anything here. You just need to hit ctrl + c.
+```
 
-Step 3. Create config.toml
-Once you run Codex, your WSL will have .codex folder.
-You can use whatever you like.
+### Step 3 — Create `config.toml`
 
+```bash
 vim ~/.codex/config.toml
-config.toml
+```
 
+```toml
 [model_providers.llama]
 name = "llama.cpp"
 base_url = "http://localhost:8080/v1"
 wire_api = "responses"
 stream_idle_timeout_ms = 10000000
+```
 
-### download model
-as above
+### Start the server
 
-### start llama.server
-./build/bin/llama-server -m ~/models/gemma-4-12b-it-UD-Q4_K_XL.gguf  -c 100000 --port 8080
+```bash
+./build/bin/llama-server -m ~/models/gemma-4-12b-it-UD-Q4_K_XL.gguf -c 100000 --port 8080
+```
 
+### Start Codex
 
-### start codex
+```bash
 codex --model ~/models/gemma-4-12b-it-UD-Q4_K_XL.gguf -c model_provider=llama --search --dangerously-bypass-approvals-and-sandbox
-
-
+```
