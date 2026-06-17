@@ -1,0 +1,183 @@
+{
+  "_timings": {
+    "wall_clock_s": 79.14,
+    "prompt_tokens": 42147,
+    "completion_tokens": 2145,
+    "prefill_s": 0.4,
+    "generation_s": 76.61,
+    "tokens_per_sec": 28.0,
+    "total_wall_clock_s": 79.24
+  },
+  "volvo_trucks_group": {
+    "net_sales": {
+      "q1_2026_sek_m": 75372,
+      "q1_2025_sek_m": 82248,
+      "change_pct": -8
+    },
+    "organic_sales_growth_pct": {
+      "q1_2026": -1,
+      "q1_2025": -8
+    },
+    "vehicle_sales_organic_growth_pct": {
+      "q1_2026": -3,
+      "q1_2025": -10
+    },
+    "service_sales_organic_growth_pct": {
+      "q1_2026": 7,
+      "q1_2025": 1
+    },
+    "adjusted_operating_income": {
+      "q1_2026_sek_m": 7586,
+      "q1_2025_sek_m": 8464,
+      "change_pct": -10
+    },
+    "adjusted_operating_margin_pct": {
+      "q1_2026": 10.1,
+      "q1_2025": 10.3
+    },
+    "operating_income": {
+      "q1_2026_sek_m": 6899,
+      "q1_2025_sek_m": 8464,
+      "change_pct": -18
+    },
+    "operating_margin_pct": {
+      "q1_2026": 9.2,
+      "q1_2025": 10.3
+    },
+    "adjustments_sek_m": {
+      "q1_2026": -687,
+      "q1_2025": 0
+    },
+    "currency_impact_sek_m": {
+      "q1_2026": -843
+    },
+    "net_order_intake_trucks": {
+      "q1_2026_units": 62755,
+      "q1_2025_units": 55227,
+      "change_pct": 14
+    },
+    "net_order_intake_trucks_by_region": {
+      "q1_2026": {
+        "europe_units": 31983,
+        "north_america_units": 18221,
+        "south_america_units": 6567,
+        "asia_units": 3669,
+        "africa_and_oceania_units": 2315
+      },
+      "q1_2025": {
+        "europe_units": 31362,
+        "north_america_units": 10217,
+        "south_america_units": 5948,
+        "asia_units": 5556,
+        "africa_and_oceania_units": 2144
+      }
+    },
+    "net_order_intake_trucks_by_brand": {
+      "q1_2026": {
+        "volvo_units": 35715,
+        "renault_trucks_units": 15998,
+        "mack_units": 10903,
+        "other_brands_units": 139
+      },
+      "q1_2025": {
+        "volvo_units": 33659,
+        "renault_trucks_units": 15510,
+        "mack_units": 5854,
+        "other_brands_units": 204
+      }
+    },
+    "net_order_intake_trucks_by_category": {
+      "q1_2026": {
+        "heavy_duty_gt_16_tons_units": 53309,
+        "medium_duty_7_16_tons_units": 3330,
+        "light_duty_lt_7_tons_units": 6116
+      },
+      "q1_2025": {
+        "heavy_duty_gt_16_tons_units": 47808,
+        "medium_duty_7_16_tons_units": 3020,
+        "light_duty_lt_7_tons_units": 4399
+      }
+    },
+    "net_order_intake_fully_electric_trucks": {
+      "q1_2026_units": 820,
+      "q1_2025_units": 965,
+      "change_pct": -15
+    },
+    "deliveries_trucks": {
+      "q1_2026_units": 47504,
+      "q1_2025_units": 48833,
+      "change_pct": -3
+    },
+    "deliveries_trucks_by_region": {
+      "q1_2026": {
+        "europe_units": 28041,
+        "north_america_units": 9486,
+        "south_america_units": 4896,
+        "asia_units": 2893,
+        "africa_and_oceania_units": 2188
+      },
+      "q1_2025": {
+        "europe_units": 24047,
+        "north_america_units": 14315,
+        "south_america_units": 5397,
+        "asia_units": 3315,
+        "africa_and_oceania_units": 1759
+      }
+    },
+    "deliveries_trucks_by_brand": {
+      "q1_2026": {
+        "volvo_units": 26719,
+        "renault_trucks_units": 14831,
+        "mack_units": 5748,
+        "other_brands_units": 206
+      },
+      "q1_2025": {
+        "volvo_units": 27944,
+        "renault_trucks_units": 12948,
+        "mack_units": 7874,
+        "other_brands_units": 67
+      }
+    },
+    "deliveries_fully_electric_trucks": {
+      "q1_2026_units": 966,
+      "q1_2025_units": 828,
+      "change_pct": 17
+    },
+    "net_sales_by_geographical_region": {
+      "q1_2026": {
+        "europe_sek_m": 40991,
+        "north_america_sek_m": 17773,
+        "south_america_sek_m": 7405,
+        "asia_sek_m": 4644,
+        "africa_and_oceania_sek_m": 4558
+      },
+      "q1_2025": {
+        "europe_sek_m": 37925,
+        "north_america_sek_m": 26882,
+        "south_america_sek_m": 8046,
+        "asia_sek_m": 5633,
+        "africa_and_oceania_sek_m": 3762
+      }
+    },
+    "net_sales_by_product_group": {
+      "q1_2026": {
+        "vehicles_sek_m": 57214,
+        "services_sek_m": 18158
+      },
+      "q1_2025": {
+        "vehicles_sek_m": 63752,
+        "services_sek_m": 18496
+      }
+    },
+    "revenue_recognized_at_point_of_delivery": {
+      "q1_2026_sek_m": 69151,
+      "q1_2025_sek_m": 76344,
+      "change_pct": -9
+    },
+    "revenue_recognized_over_contract_period": {
+      "q1_2026_sek_m": 6221,
+      "q1_2025_sek_m": 5904,
+      "change_pct": 5
+    }
+  }
+}
