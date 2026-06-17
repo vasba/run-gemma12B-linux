@@ -78,6 +78,12 @@ Hello! How can I help you today?
 ./build/bin/llama-server -hf unsloth/gemma-4-12b-it-GGUF:UD-Q4_K_XL --port 8080
 ```
 
+Or use the Q4_0 variant — standard 4-bit quantization, no unquantization overhead, loads faster:
+
+```bash
+./build/bin/Release/llama-server -hf unsloth/gemma-4-12b-it-GGUF:UD-Q4_0 -c 100000 --port 8080
+```
+
 **Optional — download model manually:**
 
 ```bash
