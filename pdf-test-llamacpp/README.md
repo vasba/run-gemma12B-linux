@@ -22,39 +22,17 @@ pip install -r requirements.txt
 ./llama-server -m your-model.gguf --port 8080 --ctx-size 65536
 ```
 
-### 2. Edit the script to point to your PDF
-
-Open `extract_financial.py` and change the `PDF_PATH` variable at the top:
-
-```python
-PDF_PATH = "your-report.pdf"
-```
-
-### 3. Run the script
+### 2. Run the script
 
 ```bash
+# default PDF bundled in the repo
 python extract_financial.py
-```
 
-The extracted data is printed to the terminal and saved to `volvo_trucks_financial_data.json`.
-
----
-
-## Using a different PDF as input
-
-You can pass any PDF directly from the command line without editing the script:
-
-```bash
+# any other PDF
 python extract_financial.py path/to/your-report.pdf
 ```
 
-To support this, update the `main()` function's first line to read from `sys.argv`:
-
-```python
-PDF_PATH = sys.argv[1] if len(sys.argv) > 1 else "5349601-volvo-group---report-on-the-first-quarter-2026.pdf"
-```
-
-Or just change `PDF_PATH` at the top of the file before running.
+The extracted data is printed to the terminal and saved to `volvo_trucks_financial_data.json`.
 
 ---
 
@@ -62,13 +40,15 @@ Or just change `PDF_PATH` at the top of the file before running.
 
 | Variable | Default | Description |
 |---|---|---|
-| `PDF_PATH` | `5349601-...pdf` | Path to the input PDF |
+| `PDF_PATH` | `5349601-...pdf` | Path to the input PDF (overridden by CLI arg) |
 | `API_URL` | `http://localhost:8080/v1/chat/completions` | llama.cpp endpoint |
-| `MAX_TOKENS` | `16384` | Token budget for the model (reasoning + JSON output) |
+| `MAX_TOKENS` | `16384` | Token budget for JSON output |
 
 ### Context window note
 
-The full PDF text is sent in a single request. The default `MAX_TOKENS=16384` works for PDFs up to ~100 pages. For larger PDFs you may need to increase it — make sure your llama.cpp server's `--ctx-size` is large enough to fit both the prompt and the response.
+The full PDF text is sent in a single request. `MAX_TOKENS=16384` works for PDFs up to ~100 pages.
+For larger PDFs you may need to increase it — make sure `--ctx-size` on the server is large enough
+to fit both the prompt and the response.
 
 ---
 
@@ -78,63 +58,72 @@ Results are written to `volvo_trucks_financial_data.json` in the working directo
 
 ```json
 {
+  "_timings": { ... },
   "volvo_trucks_group": {
-    "net_sales_msek": {
-      "q1_2026": 75372,
-      "q1_2025": 82248,
+    "net_sales": {
+      "q1_2026_sek_m": 75372,
+      "q1_2025_sek_m": 82248,
       "change_pct": -8
     },
     "adjusted_operating_margin_pct": {
       "q1_2026": 10.1,
       "q1_2025": 10.3
     },
-    "deliveries_units": {
-      "q1_2026": 47504,
-      "q1_2025": 48833,
+    "deliveries_trucks": {
+      "q1_2026_units": 47504,
+      "q1_2025_units": 48833,
       "change_pct": -3
     }
   }
 }
 ```
 
+---
+
 ## Timing
 
 The script prints a timing summary at the end of every run:
 
-```
+```text
 --- Timing summary ---
   PDF read + parse : 0.1s
-  Model prefill    : 0.9s
-  Model generation : 340.2s  (27.3 tok/s)
-  Total wall clock : 341.2s
-  Tokens used      : 929 prompt + 9284 completion
+  Model prefill    : 28.7s
+  Model generation : 99.4s  (27.5 tok/s)
+  Total wall clock : 131.6s
+  Tokens used      : 42147 prompt + 2736 completion
 ```
 
-Timing data is also stored inside the output JSON under the `_timings` key:
+Timing data is also saved in the output JSON under `_timings`:
 
 ```json
 {
   "_timings": {
-    "wall_clock_s": 341.1,
-    "prompt_tokens": 929,
-    "completion_tokens": 9284,
-    "prefill_s": 0.9,
-    "generation_s": 340.2,
-    "tokens_per_sec": 27.3,
-    "total_wall_clock_s": 341.2
-  },
-  ...
+    "wall_clock_s": 131.44,
+    "prompt_tokens": 42147,
+    "completion_tokens": 2736,
+    "prefill_s": 28.72,
+    "generation_s": 99.42,
+    "tokens_per_sec": 27.5,
+    "total_wall_clock_s": 131.56
+  }
 }
 ```
 
 **What affects speed:**
 - `MAX_TOKENS` — higher = more time; reduce if the model finishes before hitting the limit
 - Model size / quantization — smaller models generate faster
-- `--ctx-size` on the server — doesn't affect generation speed directly
+- `--ctx-size` on the server — does not affect generation speed directly
+
+---
 
 ## How it works
 
-1. **PDF → text**: `pymupdf` extracts all text from the PDF.
-2. **Single request**: the full text is sent to the llama.cpp `/v1/chat/completions` endpoint in one call.
-3. **Reasoning model handling**: the model (Gemma 4 thinking) reasons internally before outputting JSON. The script reads from `content` first, then falls back to extracting JSON embedded inside `reasoning_content` if needed.
-4. **JSON extraction**: a bracket-depth parser finds the first valid, non-placeholder JSON object in the response.
+1. **PDF → text** — `pymupdf` extracts all text from the PDF pages.
+2. **Single request** — the full text is sent to `/v1/chat/completions` in one call.
+3. **Prefill trick** — the assistant turn is pre-seeded with `{` so the model starts
+   outputting JSON immediately, bypassing the internal `<think>` reasoning phase entirely.
+   Without this, Gemma 4 (a thinking model) exhausts the entire token budget on reasoning
+   and produces no visible output.
+4. **JSON extraction** — a bracket-depth parser finds the largest valid, non-placeholder
+   JSON object in the response. If the output is truncated, `_repair_json()` closes
+   unclosed braces/brackets before parsing.
