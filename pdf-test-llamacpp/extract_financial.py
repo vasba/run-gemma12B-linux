@@ -36,6 +36,7 @@ Key findings from development
 """
 
 import json
+import os
 import re
 import sys
 import time
@@ -44,7 +45,8 @@ import pymupdf  # PyMuPDF
 
 
 PDF_PATH = sys.argv[1] if len(sys.argv) > 1 else "5349601-volvo-group---report-on-the-first-quarter-2026.pdf"
-API_URL  = "http://192.168.68.53:8080/v1/chat/completions"
+_host    = os.environ.get("LLAMACPP_HOST", "localhost")
+API_URL  = f"http://{_host}:8080/v1/chat/completions"
 MODEL    = "local-model"   # llama.cpp ignores the model name
 MAX_TOKENS = 256000         # large budget so reasoning + JSON both fit
 
