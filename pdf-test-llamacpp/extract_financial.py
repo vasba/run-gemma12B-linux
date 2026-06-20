@@ -44,9 +44,9 @@ import pymupdf  # PyMuPDF
 
 
 PDF_PATH = sys.argv[1] if len(sys.argv) > 1 else "5349601-volvo-group---report-on-the-first-quarter-2026.pdf"
-API_URL  = "http://localhost:8080/v1/chat/completions"
+API_URL  = "http://192.168.68.53:8080/v1/chat/completions"
 MODEL    = "local-model"   # llama.cpp ignores the model name
-MAX_TOKENS = 16384         # large budget so reasoning + JSON both fit
+MAX_TOKENS = 256000         # large budget so reasoning + JSON both fit
 
 
 def extract_text_from_pdf(path: str) -> str:
