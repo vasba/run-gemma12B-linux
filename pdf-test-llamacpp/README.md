@@ -19,8 +19,10 @@ pip install -r requirements.txt
 ### 1. Start your llama.cpp server
 
 ```bash
-./llama-server -m your-model.gguf --port 8080 --ctx-size 65536
+./llama-server -m your-model.gguf --port 8080 --ctx-size 200000
 ```
+
+`--ctx-size` must fit prompt + `MAX_TOKENS` (150000 by default) — bump it further for larger PDFs.
 
 ### 2. Run the script
 
@@ -30,6 +32,9 @@ python extract_financial.py
 
 # any other PDF
 python extract_financial.py path/to/your-report.pdf
+
+# thinking/reasoning model (e.g. Gemma thinking) — bypasses the <think> phase
+python extract_financial.py --thinking-hack
 ```
 
 The extracted data is printed to the terminal and saved to `volvo_trucks_financial_data.json`.
@@ -40,15 +45,16 @@ The extracted data is printed to the terminal and saved to `volvo_trucks_financi
 
 | Variable | Default | Description |
 |---|---|---|
-| `PDF_PATH` | `5349601-...pdf` | Path to the input PDF (overridden by CLI arg) |
+| `PDF_PATH` (CLI arg) | `5349601-...pdf` | Path to the input PDF |
+| `--thinking-hack` (CLI flag) | off | Prefill `{` to skip a reasoning model's `<think>` phase (see below) |
 | `API_URL` | `http://localhost:8080/v1/chat/completions` | llama.cpp endpoint |
-| `MAX_TOKENS` | `16384` | Token budget for JSON output |
+| `MAX_TOKENS` | `150000` | Token budget for the completion (JSON output, plus reasoning if `--thinking-hack` is off) |
 
 ### Context window note
 
-The full PDF text is sent in a single request. `MAX_TOKENS=16384` works for PDFs up to ~100 pages.
-For larger PDFs you may need to increase it — make sure `--ctx-size` on the server is large enough
-to fit both the prompt and the response.
+The full PDF text is sent in a single request. `max_tokens` only caps the *completion* length —
+it's separate from the server's context window, which must hold prompt + completion together.
+Make sure `--ctx-size` on the server is large enough to fit both (e.g. prompt tokens + 150000).
 
 ---
 
@@ -120,10 +126,11 @@ Timing data is also saved in the output JSON under `_timings`:
 
 1. **PDF → text** — `pymupdf` extracts all text from the PDF pages.
 2. **Single request** — the full text is sent to `/v1/chat/completions` in one call.
-3. **Prefill trick** — the assistant turn is pre-seeded with `{` so the model starts
-   outputting JSON immediately, bypassing the internal `<think>` reasoning phase entirely.
-   Without this, Gemma 4 (a thinking model) exhausts the entire token budget on reasoning
-   and produces no visible output.
+3. **Prefill trick (`--thinking-hack`, off by default)** — the assistant turn is pre-seeded
+   with `{` so the model starts outputting JSON immediately, bypassing the internal `<think>`
+   reasoning phase entirely. Needed for thinking models like Gemma 4 12B thinking, which
+   otherwise burn tokens on reasoning before producing visible output. Leave it off for
+   non-thinking models.
 4. **JSON extraction** — a bracket-depth parser finds the largest valid, non-placeholder
    JSON object in the response. If the output is truncated, `_repair_json()` closes
    unclosed braces/brackets before parsing.
