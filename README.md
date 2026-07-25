@@ -52,10 +52,10 @@ cmake --build build --config Release -j 16
 
 Model: [unsloth/gemma-4-12b-it-GGUF](https://huggingface.co/unsloth/gemma-4-12b-it-GGUF)
 
-**CLI:**
+**CLI with thinking:**
 
 ```bash
-./build/bin/llama-cli -hf unsloth/gemma-4-12b-it-GGUF:UD-Q4_K_XL
+./build/bin/Release/llama-server -hf unsloth/gemma-4-12b-it-GGUF:UD-Q4_K_XL
 ```
 
 Example interaction:
@@ -72,16 +72,38 @@ Hello! How can I help you today?
 [ Prompt: 19.5 t/s | Generation: 11.8 t/s ]
 ```
 
-**Server (web UI + API on port 8080):**
+**CLI without thinking:**
+
+```bash
+./build/bin/Release/llama-server -hf unsloth/gemma-4-12b-it-GGUF:UD-Q4_K_XL --chat-template-kwargs '{"enable_thinking":false}'
+```
+
+Example interaction:
+
+```text
+> hello
+
+Hello! How can I help you today?
+
+[ Prompt: 19.5 t/s | Generation: 11.8 t/s ]
+```
+
+**Server with thinking (web UI + API on port 8080):**
 
 ```bash
 ./build/bin/llama-server -hf unsloth/gemma-4-12b-it-GGUF:UD-Q4_K_XL --port 8080
 ```
 
+**Server without thinking (web UI + API on port 8080):**
+
+```bash
+./build/bin/llama-server -hf unsloth/gemma-4-12b-it-GGUF:UD-Q4_K_XL --reasoning off --port 8080
+```
+
 Or use the Q4_0 variant — natively trained with 4-bit weights (not post-training quantized):
 
 ```bash
-./build/bin/Release/llama-server -hf unsloth/gemma-4-12b-it-GGUF:UD-Q4_0 -c 100000 --port 8080
+./build/bin/Release/llama-server -hf unsloth/gemma-4-12b-it-GGUF:Q4_0 -c 256000 --port 8080
 ```
 
 **Optional — download model manually:**
