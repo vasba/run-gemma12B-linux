@@ -5,11 +5,13 @@ used by ask_image.py and compare_images.py.
 
 import base64
 import mimetypes
+import os
 import time
 
 import requests
 
-API_URL = "http://localhost:8080/v1/chat/completions"
+_host = os.environ.get("LLAMACPP_HOST", "localhost")
+API_URL = f"http://{_host}:8080/v1/chat/completions"
 MODEL = "local-model"  # llama.cpp ignores the model name
 
 
