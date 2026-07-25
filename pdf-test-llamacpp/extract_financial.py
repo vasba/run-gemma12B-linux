@@ -4,7 +4,12 @@ Extract financial data for Volvo Trucks Group from a PDF report
 using a local llama.cpp server at http://localhost:8080/v1/chat/completions.
 
 Usage:
-    python extract_financial.py [path/to/report.pdf]
+    python extract_financial.py [path/to/report.pdf] [--thinking-hack]
+
+By default this assumes a non-thinking model and sends a plain request.
+Pass --thinking-hack for reasoning models (e.g. Gemma thinking / unsloth GGUF)
+that otherwise burn their whole token budget on internal chain-of-thought
+before emitting any visible content.
 
 Key findings from development
 ------------------------------
@@ -12,12 +17,13 @@ Key findings from development
    The PDF is ~26k tokens; the model context is 256k. Chunking wastes time and
    produces fragmented results. One request = one coherent extraction.
 
-2. The model (Gemma 4 12B thinking / unsloth GGUF) is a reasoning model.
-   By default it spends its entire token budget on internal chain-of-thought
-   (reasoning_content) before emitting any visible content. With MAX_TOKENS=16384
-   it exhausted the budget thinking and produced zero output.
+2. Reasoning models need --thinking-hack.
+   A model like Gemma 4 12B thinking / unsloth GGUF spends its entire token
+   budget on internal chain-of-thought (reasoning_content) before emitting any
+   visible content. With MAX_TOKENS=16384 it exhausted the budget thinking and
+   produced zero output.
 
-3. Fix: prefill the assistant turn with '{'.
+3. --thinking-hack prefills the assistant turn with '{'.
    Adding {"role": "assistant", "content": "{"} to the messages list tells
    llama.cpp to treat '{' as the start of the assistant reply. The model
    continues from there and outputs JSON directly, bypassing the <think> phase
@@ -35,6 +41,7 @@ Key findings from development
    output JSON for benchmarking across different models or PDFs.
 """
 
+import argparse
 import json
 import os
 import re
@@ -44,11 +51,10 @@ import requests
 import pymupdf  # PyMuPDF
 
 
-PDF_PATH = sys.argv[1] if len(sys.argv) > 1 else "5349601-volvo-group---report-on-the-first-quarter-2026.pdf"
 _host    = os.environ.get("LLAMACPP_HOST", "localhost")
 API_URL  = f"http://{_host}:8080/v1/chat/completions"
 MODEL    = "local-model"   # llama.cpp ignores the model name
-MAX_TOKENS = 256000         # large budget so reasoning + JSON both fit
+MAX_TOKENS = 256000        # large budget so reasoning + JSON both fit
 
 
 def extract_text_from_pdf(path: str) -> str:
@@ -227,11 +233,30 @@ def call_model(messages: list[dict]) -> dict:
     }
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "pdf_path", nargs="?",
+        default="5349601-volvo-group---report-on-the-first-quarter-2026.pdf",
+        help="Path to the PDF report to extract data from.",
+    )
+    parser.add_argument(
+        "--thinking-hack", action="store_true",
+        help=(
+            "Prefill the assistant turn with '{' to bypass a reasoning model's "
+            "<think> phase. Only needed for thinking/reasoning models — off by "
+            "default, which assumes a non-thinking model."
+        ),
+    )
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
     t_start = time.perf_counter()
 
-    print(f"Reading PDF: {PDF_PATH}")
-    text = extract_text_from_pdf(PDF_PATH)
+    print(f"Reading PDF: {args.pdf_path}")
+    text = extract_text_from_pdf(args.pdf_path)
     print(f"Extracted {len(text):,} characters (~{len(text)//4:,} tokens) from PDF")
 
     system_prompt = (
@@ -250,24 +275,29 @@ def main():
         "Extract every financial figure, KPI, and metric for Volvo Trucks Group and return a JSON object."
     )
 
-    # Prefill the assistant turn with '{' so the model is forced to emit JSON
-    # immediately rather than spending all tokens on internal reasoning first.
     messages = [
-        {"role": "system",    "content": system_prompt},
-        {"role": "user",      "content": user_prompt},
-        {"role": "assistant", "content": "{"},
+        {"role": "system", "content": system_prompt},
+        {"role": "user",   "content": user_prompt},
     ]
+    if args.thinking_hack:
+        # Prefill the assistant turn with '{' so the model is forced to emit
+        # JSON immediately rather than spending all tokens on internal
+        # reasoning first.
+        messages.append({"role": "assistant", "content": "{"})
 
-    print(f"Sending full document to model (max_tokens={MAX_TOKENS}) …")
+    print(f"Sending full document to model (max_tokens={MAX_TOKENS}, "
+          f"thinking_hack={args.thinking_hack}) …")
     result = call_model(messages)
 
     content   = result["content"]
     reasoning = result["reasoning"]
     timings   = result["timings"]
 
-    # The assistant turn was prefilled with '{', so prepend it to the content
-    # (llama.cpp returns only the *continuation*, not the prefill itself).
-    content_full = "{" + content if content and not content.lstrip().startswith("{") else content
+    content_full = content
+    if args.thinking_hack:
+        # The assistant turn was prefilled with '{', so prepend it to the
+        # content (llama.cpp returns only the *continuation*, not the prefill).
+        content_full = "{" + content if content and not content.lstrip().startswith("{") else content
 
     # Try to extract JSON from content first, then from reasoning_content
     raw_json = extract_json_from_text(content_full)
