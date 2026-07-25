@@ -49,7 +49,7 @@ generation, tokens/s) — the same format used in `../image-test-llamacpp`.
 
 | Variable / flag | Default | Description |
 |---|---|---|
-| `API_URL` (in `llama_client.py`) | `http://localhost:8080/v1/chat/completions` | llama.cpp endpoint |
+| `LLAMACPP_HOST` (env var) | `localhost` | Host/IP of the llama.cpp server, e.g. `LLAMACPP_HOST=192.168.1.50 python ask_audio.py ...` |
 | `--max-tokens` | `2048` | Completion token budget |
 | `--show-reasoning` | off | Print the model's `<think>` content, if the server returns any |
 
